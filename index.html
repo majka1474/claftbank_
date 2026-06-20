@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>日報 ｜ 作成・一覧</title>
+<style>
+:root{
+  --bg:#eef0f3;--surface:#fff;--ink:#1e293b;--ink2:#475569;--muted:#94a3b8;
+  --line:#e2e8f0;--line2:#f1f5f9;--accent:#059669;--accent-bg:#ecfdf5;--accent-line:#a7f3d0;
+  --slate900:#0f172a;--slate800:#1e293b;--field-label:#f3f4f6;--blue:#2563eb;
+  --r:10px;--font:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:13px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:208px;background:var(--slate900);color:#cbd5e1;display:flex;flex-direction:column;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:8px;padding:16px;border-bottom:1px solid #1e293b}
+.brand .logo{width:32px;height:32px;border-radius:8px;background:#fbbf24;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:700}
+.brand .tt{font-size:14px;font-weight:700;color:#fff;line-height:1.2}
+.brand .ss{font-size:10px;color:#64748b}
+.nav{padding:8px;display:flex;flex-direction:column;gap:2px}
+.side-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:13px;color:#94a3b8;border:none;background:none;text-align:left;width:100%}
+.side-item.active{background:#1e293b;color:#fff}
+.side-item.soon{opacity:.5}
+.side-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.6}
+.side-item .tag{margin-left:auto;font-size:9px;background:#334155;color:#94a3b8;padding:1px 6px;border-radius:8px}
+.side-foot{margin-top:auto;padding:12px;border-top:1px solid #1e293b;display:flex;align-items:center;gap:8px;font-size:12px;color:#94a3b8}
+.avatar{width:28px;height:28px;border-radius:50%;background:#334155;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.topbar h1{font-size:16px;font-weight:700;margin:0}
+.content{padding:20px;flex:1}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tab{padding:8px 16px;font-size:14px;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:8px 16px;border-radius:8px;border:1px solid transparent}
+.btn-primary{color:#fff;background:var(--accent);border:none}.btn-primary:hover{background:#047857}
+.btn-ghost{color:var(--ink2);background:var(--surface);border-color:var(--line)}.btn-ghost:hover{background:#f1f5f9}
+.btn-add{color:var(--accent);background:var(--accent-bg);border:1px dashed var(--accent-line)}
+.btn-sm{font-size:12px;padding:5px 10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.card-h{padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink2);background:#fafbfc;display:flex;justify-content:space-between;align-items:center}
+/* header form */
+.hdr{display:flex;gap:20px;padding:16px;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:12px;color:var(--muted)}
+.ctrl{padding:8px 10px;border:1px solid var(--line);border-radius:7px;outline:none;background:#fff}
+.ctrl:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg)}
+.period{font-size:12px;color:var(--ink2);align-self:flex-end;padding-bottom:9px}
+.period b{color:var(--ink)}
+/* visit table */
+.vwrap{overflow-x:auto}
+table.visits{width:100%;border-collapse:collapse;font-size:13px;min-width:1040px}
+.visits th{background:#fafbfc;color:var(--muted);font-size:11px;font-weight:500;padding:8px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.visits td{padding:5px 6px;border-bottom:1px solid var(--line2);vertical-align:middle}
+.visits input,.visits select{width:100%;padding:6px 8px;border:1px solid transparent;border-radius:6px;background:#f8fafc;outline:none}
+.visits input:focus,.visits select:focus{background:#fff;border-color:var(--accent)}
+.visits input.num{text-align:right;font-variant-numeric:tabular-nums}
+.visits .idx{color:var(--muted);font-size:12px;text-align:center;width:28px}
+.del{border:none;background:none;color:#cbd5e1;font-size:16px;padding:4px 6px;border-radius:6px}
+.del:hover{color:#e11d48;background:#fff1f2}
+.addrow{padding:10px 16px}
+/* col widths */
+.c-site{min-width:150px}.c-visit{min-width:140px}.c-partner{min-width:90px}.c-purpose{min-width:110px}.c-sale{min-width:120px}.c-num{width:96px}.c-report{min-width:140px}
+/* totals */
+.totals{display:flex;gap:16px;flex-wrap:wrap;padding:14px 16px;background:#f8fafc;border-top:1px solid var(--line)}
+.tcell{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 16px;min-width:130px}
+.tcell .tl{font-size:11px;color:var(--muted)}
+.tcell .tv{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+.foot-r{display:flex;justify-content:flex-end;gap:10px}
+.hint{font-size:12px;color:var(--muted);padding:0 16px 14px}
+/* list */
+.rep{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.rep-h{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.rep-h:hover{background:#fafbfc}
+.rep-av{width:34px;height:34px;border-radius:50%;background:#e0e7ff;color:#4338ca;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.rep-meta{flex:1;min-width:0}
+.rep-name{font-weight:700;font-size:14px}
+.rep-sub{font-size:12px;color:var(--muted)}
+.rep-fig{text-align:right;font-size:12px;color:var(--ink2)}
+.rep-fig b{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.chev{color:var(--muted);transition:transform .15s}
+.chev.open{transform:rotate(90deg)}
+.rep-body{border-top:1px solid var(--line2);padding:4px 0}
+table.detail{width:100%;border-collapse:collapse;font-size:12px}
+.detail th{background:#fafbfc;color:var(--muted);font-weight:500;padding:6px 10px;text-align:left;white-space:nowrap}
+.detail td{padding:6px 10px;border-top:1px solid var(--line2);color:var(--ink2)}
+.detail td.num{text-align:right;font-variant-numeric:tabular-nums}
+.print-btn{font-size:11px;color:var(--blue);background:none;border:1px solid #bfdbfe;border-radius:6px;padding:3px 8px}
+.empty{color:var(--muted);font-size:13px;padding:30px;text-align:center}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+/* ===== 初期データ（実日報より） ===== */
+const NIPPO_SEED = [{"id": 1, "who": "青島 秀和", "date": "2026-06-09", "rows": [{"site": "", "visit": "㈱ヨシオ", "partner": "鈴木 寛政", "purpose": "生コンデリバリー", "sale": "生コン", "mikomi": 0, "kettei": 2731050, "arari": 57375, "report": "生コンデリバリーにて駿東郡長泉町現場事務所へ訪問 (富士製作所新工場建設工事)。1工区基礎コン打設。打設時間 8:30～16:00。V=114.75 m3 納入完了。高田建材にて手配。次回 6/16 (火) にて、2工区基礎コン打設予定。"}]}, {"id": 2, "who": "紅林 優輝子", "date": "2026-06-05", "rows": [{"site": "", "visit": "株式会社ライズ", "partner": "", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。青島営業課長に面会しご挨拶。"}, {"site": "", "visit": "せいさ工材㈱", "partner": "長野 考利代表取締役", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。小澤所長にご挨拶。"}, {"site": "", "visit": "丸栄コンクリート工業㈱", "partner": "冨樫 僚平係長", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。富樫係長に面会してご挨拶。"}, {"site": "", "visit": "ヌマカン株式会社", "partner": "望月 万佐成", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。望月次長に面会してご挨拶。"}, {"site": "", "visit": "株式会社 大成", "partner": "山森 冬馬", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。営業部の山森氏に面会してご挨拶。"}, {"site": "", "visit": "柴田建材㈱", "partner": "金子 健三営業一課 課長", "purpose": "御挨拶", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "池田さんに同行。山崎部長、金子課長に面会してご挨拶。"}]}, {"id": 3, "who": "青島 秀和", "date": "2026-06-10", "rows": [{"site": "", "visit": "㈱斎藤工務店", "partner": "剣持 和秀土木部長", "purpose": "定期訪問", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "新案件のご相談を頂き訪問 (令和8年度焼津水産高等学校臨海実習場改修工事)。本案件内にフェンス工があるが、先方はフェンス業者との繋がりが乏しいため当社経由で依頼したいとの事。その場で設計書、図面を入手。追って見積提出する事となった。"}, {"site": "", "visit": "佐々木工業", "partner": "佐々木 修宏代表取締役", "purpose": "打合せ", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "生コンオーダーシステムのバージョンアップについてご説明。前回のご説明を受け、当システムを各社員へも展開したいとの要望を頂く。その場で加入QRコードを提出。先方は相良ドラゴンズ以外のプラントと取引がないため、案件発生時は概ね当社へ依頼を下さっている。引き続きのご愛顧をお願いした。"}, {"site": "", "visit": "㈱若杉組 御前崎支店", "partner": "松林 泰光土木部長", "purpose": "定期訪問", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "小笠食肉センター事務所へ訪問。新規案件の情報収集 (小笠食肉センター汚水処理施設新築工事)。依然として設計の随意契約段階のため、進捗なしとの事。今後 当社案件参加をお願いした。工事本契約2027年3月予定のため、定期訪問を継続し機を逃さないようにする。"}, {"site": "", "visit": "", "partner": "", "purpose": "", "sale": "", "mikomi": 0, "kettei": 0, "arari": 0, "report": "・無効訪問 : 増田組 杉島次長、西島土木 増田グループ長 → 不在のため、名刺を残す。"}]}];
+
+const STAFF = ["駒井 聡","川井 大輔","益田 桂志","鈴木 悠仁","青島 秀和","小林 大介","渡邊 賢矢","紅林 優輝子"];
+const PURPOSES = ["定期訪問","同行訪問","打合せ","工事打合せ","現場打合せ","現場管理","ご挨拶","営業","安全大会","業務処理","社内業務","代休"];
+const SALES_KINDS = ["工事","生コン","二次製品","骨材","材料","左官コンクリート工事","造成工事","その他"];
+
+const yen=(v)=>"¥"+Number(v||0).toLocaleString("ja-JP");
+const num=(v)=>Number(String(v).replace(/[^0-9-]/g,""))||0;
+const period=(dateStr)=>{ // 期＝2026年が40期と仮定（簡易）
+  if(!dateStr) return {ki:"—",month:"—"};
+  const d=new Date(dateStr); return {ki:40, month:d.getMonth()+1};
+};
+const blankRow=()=>({site:"",visit:"",partner:"",purpose:"",sale:"",mikomi:0,kettei:0,arari:0,report:""});
+
+/* ===== 日報作成 ===== */
+function CreateView({onSave}){
+  const [who,setWho]=useState(STAFF[0]);
+  const [date,setDate]=useState("2026-06-19");
+  const [rows,setRows]=useState([blankRow(),blankRow(),blankRow()]);
+
+  const setCell=(i,k)=>(e)=>{const val=["mikomi","kettei","arari"].includes(k)?num(e.target.value):e.target.value;setRows(p=>p.map((r,idx)=>idx===i?{...r,[k]:val}:r));};
+  const addRow=()=>setRows(p=>[...p,blankRow()]);
+  const delRow=(i)=>setRows(p=>p.length>1?p.filter((_,idx)=>idx!==i):p);
+
+  const totals=useMemo(()=>{
+    const juchu=rows.reduce((a,r)=>a+num(r.kettei),0);
+    const arari=rows.reduce((a,r)=>a+num(r.arari),0);
+    return {juchu,arari,ritsu:juchu?(arari/juchu*100):0};
+  },[rows]);
+  const {ki,month}=period(date);
+
+  const save=()=>{
+    const filled=rows.filter(r=>r.site||r.visit||r.kettei||r.mikomi||r.report);
+    if(!who||!date){alert("記入者と日付を入力してください");return;}
+    if(!filled.length){alert("訪問を1件以上入力してください");return;}
+    onSave({who,date,rows:filled});
+    setRows([blankRow(),blankRow(),blankRow()]);
+    alert("日報を保存しました（管理者へLINE通知が飛ぶ想定）");
+  };
+
+  return (
+    <div>
+      <div className="card">
+        <div className="card-h">日報ヘッダー</div>
+        <div className="hdr">
+          <div className="fg"><label>記入者</label><select className="ctrl" value={who} onChange={e=>setWho(e.target.value)}>{STAFF.map(s=><option key={s}>{s}</option>)}</select></div>
+          <div className="fg"><label>日付</label><input className="ctrl" type="date" value={date} onChange={e=>setDate(e.target.value)} /></div>
+          <div className="period">第 <b>{ki}</b> 期 ／ <b>{month}</b> 月</div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-h">本日の訪問 <span style={{fontWeight:400,color:"var(--muted)",fontSize:12}}>{rows.length} 行</span></div>
+        <div className="vwrap">
+          <table className="visits">
+            <thead><tr>
+              <th></th><th className="c-site">現場名</th><th className="c-visit">訪問先</th><th className="c-partner">相手</th>
+              <th className="c-purpose">目的</th><th className="c-sale">販売内容</th>
+              <th className="c-num">見込売上</th><th className="c-num">決定売上</th><th className="c-num">粗利額</th>
+              <th className="c-report">報告事項</th><th></th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r,i)=>(
+                <tr key={i}>
+                  <td className="idx">{i+1}</td>
+                  <td><input value={r.site} onChange={setCell(i,"site")} placeholder="現場名" /></td>
+                  <td><input value={r.visit} onChange={setCell(i,"visit")} placeholder="訪問先" /></td>
+                  <td><input value={r.partner} onChange={setCell(i,"partner")} placeholder="相手" /></td>
+                  <td><input list="purposes" value={r.purpose} onChange={setCell(i,"purpose")} placeholder="目的" /></td>
+                  <td><input list="sales" value={r.sale} onChange={setCell(i,"sale")} placeholder="販売内容" /></td>
+                  <td><input className="num" value={r.mikomi||""} onChange={setCell(i,"mikomi")} placeholder="0" /></td>
+                  <td><input className="num" value={r.kettei||""} onChange={setCell(i,"kettei")} placeholder="0" /></td>
+                  <td><input className="num" value={r.arari||""} onChange={setCell(i,"arari")} placeholder="0" /></td>
+                  <td><input value={r.report} onChange={setCell(i,"report")} placeholder="報告事項" /></td>
+                  <td><button className="del" onClick={()=>delRow(i)} title="削除">×</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="addrow"><button className="btn btn-add btn-sm" onClick={addRow}>＋ 訪問を追加</button></div>
+        <div className="totals">
+          <div className="tcell"><div className="tl">本日 受注金額（決定売上計）</div><div className="tv">{yen(totals.juchu)}</div></div>
+          <div className="tcell"><div className="tl">本日 粗利</div><div className="tv" style={{color:"var(--accent)"}}>{yen(totals.arari)}</div></div>
+          <div className="tcell"><div className="tl">粗利率</div><div className="tv">{totals.ritsu.toFixed(1)}%</div></div>
+        </div>
+      </div>
+
+      <div className="hint">※「当月獲得累計」は同じ記入者のその月の日報を合算して自動計算（保存後に集計）。印刷フォーマットの A1:J13 にそのまま対応。</div>
+      <div className="foot-r"><button className="btn btn-primary" onClick={save}>日報を保存</button></div>
+    </div>
+  );
+}
+
+/* ===== 日報一覧 ===== */
+function ReportCard({rep}){
+  const [open,setOpen]=useState(false);
+  const juchu=rep.rows.reduce((a,r)=>a+Number(r.kettei||0),0);
+  const arari=rep.rows.reduce((a,r)=>a+Number(r.arari||0),0);
+  return (
+    <div className="rep">
+      <div className="rep-h" onClick={()=>setOpen(o=>!o)}>
+        <span className={"chev"+(open?" open":"")}>▶</span>
+        <div className="rep-av">{rep.who.replace(/\s/g,"")[0]}</div>
+        <div className="rep-meta"><div className="rep-name">{rep.who}</div><div className="rep-sub">{rep.date} ・ {rep.rows.length} 訪問</div></div>
+        <div className="rep-fig">受注 <b>{yen(juchu)}</b><br/><span style={{fontSize:11}}>粗利 {yen(arari)}</span></div>
+        <button className="print-btn" onClick={(e)=>{e.stopPropagation();alert("営業日報フォーマット（A1:J13）でExcel/PDF出力 ＝ 次の実装");}}>🖨 印刷</button>
+      </div>
+      {open && (
+        <div className="rep-body">
+          <table className="detail">
+            <thead><tr><th>現場名</th><th>訪問先</th><th>相手</th><th>目的</th><th>販売内容</th><th>見込売上</th><th>決定売上</th><th>粗利額</th><th>報告事項</th></tr></thead>
+            <tbody>{rep.rows.map((r,i)=>(
+              <tr key={i}><td>{r.site}</td><td>{r.visit}</td><td>{r.partner}</td><td>{r.purpose}</td><td>{r.sale}</td>
+              <td className="num">{r.mikomi?yen(r.mikomi):""}</td><td className="num">{r.kettei?yen(r.kettei):""}</td><td className="num">{r.arari?yen(r.arari):""}</td><td>{r.report}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+function ListView({reports}){
+  if(!reports.length) return <div className="empty">まだ日報がありません。「日報作成」から登録してください。</div>;
+  return <div>{reports.map(r=><ReportCard key={r.id} rep={r} />)}</div>;
+}
+
+function App(){
+  const [tab,setTab]=useState("create");
+  const [reports,setReports]=useState(NIPPO_SEED);
+  const save=(rep)=>{
+    setReports(prev=>[{...rep,id:Math.max(0,...prev.map(r=>r.id||0))+1},...prev]);
+    setTab("list");
+  };
+  return (
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand"><div className="logo">丸</div><div><div className="tt">現場管理</div><div className="ss">丸紅 土木部</div></div></div>
+        <nav className="nav">
+          <button className="side-item soon"><span className="dot"></span>案件管理</button>
+          <button className="side-item active"><span className="dot"></span>日報・勤怠</button>
+          <button className="side-item soon"><span className="dot"></span>日報フォーマット出力<span className="tag">準備中</span></button>
+        </nav>
+        <div className="side-foot"><div className="avatar">玲</div>池田 玲</div>
+      </aside>
+      <div className="main">
+        <div className="topbar"><h1>日報</h1><span style={{fontSize:12,color:"var(--muted)"}}>2026年6月</span></div>
+        <div className="content">
+          <div className="tabs">
+            <button className={"tab"+(tab==="create"?" active":"")} onClick={()=>setTab("create")}>日報作成</button>
+            <button className={"tab"+(tab==="list"?" active":"")} onClick={()=>setTab("list")}>日報一覧</button>
+          </div>
+          {tab==="create" ? <CreateView onSave={save} /> : <ListView reports={reports} />}
+        </div>
+      </div>
+      <datalist id="purposes">{PURPOSES.map(p=><option key={p} value={p} />)}</datalist>
+      <datalist id="sales">{SALES_KINDS.map(s=><option key={s} value={s} />)}</datalist>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
